@@ -54,5 +54,15 @@ internal static class Program
         return 0;
     }
 
-    private static int CountFileLines(string filePath) => File.ReadLines(filePath).Count();
+    private static int CountFileLines(string filePath)
+    {
+        var lineCount = 0;
+        using var reader = new StreamReader(filePath);
+        while (reader.ReadLine() is not null)
+        {
+            lineCount++;
+        }
+
+        return lineCount;
+    }
 }
