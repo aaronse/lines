@@ -1,5 +1,3 @@
-using System.IO;
-
 namespace Lines;
 
 internal static class Program
@@ -30,7 +28,7 @@ internal static class Program
         long totalLines = 0;
         long totalFiles = 0;
 
-        foreach (var filePath in Directory.EnumerateFiles(targetPath, "*", SearchOption.AllDirectories))
+        foreach (var filePath in EnumerateFilesSafe(targetPath))
         {
             try
             {
@@ -52,6 +50,59 @@ internal static class Program
         Log.Info($"Lines: {totalLines}");
 
         return 0;
+    }
+
+    private static IEnumerable<string> EnumerateFilesSafe(string rootPath)
+    {
+        var pendingDirectories = new Stack<string>();
+        pendingDirectories.Push(rootPath);
+
+        while (pendingDirectories.Count > 0)
+        {
+            var currentDirectory = pendingDirectories.Pop();
+
+            IEnumerable<string> files;
+            try
+            {
+                files = Directory.EnumerateFiles(currentDirectory);
+            }
+            catch (IOException)
+            {
+                Log.Error($"Skipping unreadable directory: {currentDirectory}");
+                continue;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Log.Error($"Skipping inaccessible directory: {currentDirectory}");
+                continue;
+            }
+
+            foreach (var filePath in files)
+            {
+                yield return filePath;
+            }
+
+            IEnumerable<string> childDirectories;
+            try
+            {
+                childDirectories = Directory.EnumerateDirectories(currentDirectory);
+            }
+            catch (IOException)
+            {
+                Log.Error($"Skipping unreadable directory: {currentDirectory}");
+                continue;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Log.Error($"Skipping inaccessible directory: {currentDirectory}");
+                continue;
+            }
+
+            foreach (var childDirectory in childDirectories)
+            {
+                pendingDirectories.Push(childDirectory);
+            }
+        }
     }
 
     private static long CountFileLines(string filePath)
