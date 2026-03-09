@@ -5,7 +5,7 @@ namespace Lines;
 
 internal sealed class Program
 {
-    private const string DefaultIncludeFiles = "*.cs;*.java;*.c;*.cpp;*.h;*.hpp;*.sql;*.sqml;*.wxs;Descriptor.xml;*.asax;*.asmx;*.aspx;*.ascx;*.config;*.skin;*.js;*.css;*.xml;*.master;*.xsd;*.xslt";
+    private const string DefaultIncludeFiles = "*.cs;*.java;*.py;*.c;*.cpp;*.h;*.hpp;*.sql;*.sqml;*.wxs;Descriptor.xml;*.asax;*.asmx;*.aspx;*.ascx;*.config;*.skin;*.js;*.ts;*.css;*.xml;*.master;*.xsd;*.xslt";
 
     private readonly string _usage =
         "Line Count\r\n\r\n" +
@@ -13,7 +13,7 @@ internal sealed class Program
         "    Directory to search\r\n" +
         "-i,-include <expr>\r\n" +
         "    ; delimited file wildcard expression(s) of files to include,\r\n" +
-        "    defaults to... *.cs;*.java;*.py;*.c;*.cpp;*.h;*.hpp;*.sql;*.sqml;*.wxs;Descriptor.xml;*.asax;*.asmx;*.aspx;*.ascx;*.config;*.skin;*.js;*.css;*.xml;*.master;*.xsd;*.xslt\r\n" +
+        "    defaults to... " + DefaultIncludeFiles + "\r\n" +
         "-e,-exclude <expr>\r\n" +
         "    ; delimited expression(s) used to exclude files.\r\n" +
         "    NOTE: * wildcard characters not supported.\r\n" +
