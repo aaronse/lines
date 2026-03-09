@@ -5,4 +5,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="xcopy /Y $(TargetDir)$(TargetName).* e:\Tools\&#xD;&#xA;rem xcopy /Y $(TargetDir)$(TargetName).dll e:\Tools\&#xD;&#xA;rem xcopy /Y $(TargetDir)$(TargetName).pdb e:\Tools\&#xD;&#xA;" />
+  </Target>
+
 </Project>
