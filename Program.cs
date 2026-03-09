@@ -39,11 +39,11 @@ internal static class Program
             }
             catch (IOException)
             {
-                // ignore unreadable files
+                Log.Error($"Skipping unreadable file: {filePath}");
             }
             catch (UnauthorizedAccessException)
             {
-                // ignore inaccessible files
+                Log.Error($"Skipping inaccessible file: {filePath}");
             }
         }
 
@@ -54,9 +54,9 @@ internal static class Program
         return 0;
     }
 
-    private static int CountFileLines(string filePath)
+    private static long CountFileLines(string filePath)
     {
-        var lineCount = 0;
+        long lineCount = 0;
         using var reader = new StreamReader(filePath);
         while (reader.ReadLine() is not null)
         {
