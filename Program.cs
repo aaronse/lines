@@ -5,7 +5,17 @@ namespace Lines;
 
 internal sealed class Program
 {
-    private const string DefaultIncludeFiles = "*.cs;*.java;*.py;*.c;*.cpp;*.h;*.hpp;*.sql;*.sqml;*.wxs;Descriptor.xml;*.asax;*.asmx;*.aspx;*.ascx;*.config;*.skin;*.js;*.ts;*.css;*.xml;*.master;*.xsd;*.xslt";
+    private const string DefaultIncludeFiles =
+        // Languages
+        "*.cs;*.java;*.py;*.rs;" +
+        "*.c;*.cpp;*.h;*.hpp;" +
+        // Web and UI
+        "*.js;*.ts;*.tsx;*.css;" +
+        "*.asax;*.asmx;*.aspx;*.ascx;*.master;*.skin;" +
+        // Data and configuration
+        "*.sql;*.sqml;*.xml;Descriptor.xml;*.config;*.yml;*.xsd;*.xslt;" +
+        // Build, tooling, and scripts
+        "*.wxs;*.ps1;*.sh";
 
     private readonly string _usage =
         "Line Count\r\n\r\n" +
@@ -16,6 +26,9 @@ internal sealed class Program
         "    defaults to... " + DefaultIncludeFiles + "\r\n" +
         "-e,-exclude <expr>\r\n" +
         "    ; delimited expression(s) used to exclude files.\r\n" +
+        "    NOTE: * wildcard characters not supported.\r\n" +
+        "-x,-excludehard <expr>\r\n" +
+        "    ; delimited expression(s) used to hard skip files/folders.\r\n" +
         "    NOTE: * wildcard characters not supported.\r\n" +
         "-nt\r\n" +
         "    No Totals are displayed\r\n" +
@@ -110,6 +123,8 @@ internal sealed class Program
             .Split(';', StringSplitOptions.RemoveEmptyEntries);
         var excludeFilters = GetArgValue(new[] { "-e", "-exclude" }, string.Empty)
             .Split(';', StringSplitOptions.RemoveEmptyEntries);
+        var hardExcludeFilters = GetArgValue(new[] { "-x", "-excludehard" }, string.Empty)
+            .Split(';', StringSplitOptions.RemoveEmptyEntries);
 
         var maxByteSize = long.Parse(GetArgValue("-max", "1048576"));
         var verbose = _args.ContainsKey("-v");
@@ -149,7 +164,7 @@ internal sealed class Program
                     continue;
                 }
 
-                foreach (var file in Directory.GetFiles(searchDirectory, includePattern, SearchOption.AllDirectories))
+                foreach (var file in EnumerateFiles(searchDirectory, includePattern, hardExcludeFilters))
                 {
                     if (!seenFiles.Add(file))
                     {
@@ -283,6 +298,89 @@ internal sealed class Program
         }
 
         typeSummaries[extension].AddFile(filePath, countInFile, fileSize);
+    }
+
+    private static IEnumerable<string> EnumerateFiles(string searchDirectory, string includePattern, string[] hardExcludeFilters)
+    {
+        var normalizedFilters = hardExcludeFilters
+            .Select(static filter => filter.Replace("*", string.Empty, StringComparison.Ordinal))
+            .Where(static filter => !string.IsNullOrWhiteSpace(filter))
+            .ToArray();
+
+        if (normalizedFilters.Length == 0)
+        {
+            foreach (var file in Directory.GetFiles(searchDirectory, includePattern, SearchOption.AllDirectories))
+            {
+                yield return file;
+            }
+
+            yield break;
+        }
+
+        var pending = new Stack<string>();
+        pending.Push(searchDirectory);
+
+        while (pending.Count > 0)
+        {
+            var currentDirectory = pending.Pop();
+            if (PathMatchesAnyFilter(currentDirectory, normalizedFilters))
+            {
+                continue;
+            }
+
+            IEnumerable<string> files;
+            try
+            {
+                files = Directory.EnumerateFiles(currentDirectory, includePattern, SearchOption.TopDirectoryOnly);
+            }
+            catch (Exception)
+            {
+                continue;
+            }
+
+            foreach (var file in files)
+            {
+                if (PathMatchesAnyFilter(file, normalizedFilters))
+                {
+                    continue;
+                }
+
+                yield return file;
+            }
+
+            IEnumerable<string> directories;
+            try
+            {
+                directories = Directory.EnumerateDirectories(currentDirectory, "*", SearchOption.TopDirectoryOnly);
+            }
+            catch (Exception)
+            {
+                continue;
+            }
+
+            foreach (var directory in directories)
+            {
+                if (PathMatchesAnyFilter(directory, normalizedFilters))
+                {
+                    continue;
+                }
+
+                pending.Push(directory);
+            }
+        }
+    }
+
+    private static bool PathMatchesAnyFilter(string path, IEnumerable<string> filters)
+    {
+        foreach (var filter in filters)
+        {
+            if (path.Contains(filter, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void GetSdChanges(string baseDir)
