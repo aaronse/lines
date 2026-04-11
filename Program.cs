@@ -9,6 +9,8 @@ internal sealed class Program
         // Languages
         "*.cs;*.java;*.py;*.rs;" +
         "*.c;*.cpp;*.h;*.hpp;" +
+        // Markdown
+        "*.md;" +
         // Web and UI
         "*.js;*.ts;*.tsx;*.css;" +
         "*.asax;*.asmx;*.aspx;*.ascx;*.master;*.skin;" +
